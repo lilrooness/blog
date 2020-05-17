@@ -1,0 +1,95 @@
+<html>
+
+<head>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css" />
+</head>
+
+<title>JOY</title>
+
+<body>
+
+    <a class="home_link" href="../index.html">
+        <h1 class="title">Joe It Yourself</h1>
+    </a>
+    <h2 class="heading">Building Reusable Components for Summoners Table in C++</h2>
+
+
+    <div class="post">
+        <p>
+
+            NOTE: (read <a href="https://learnopengl.com/Getting-started/Hello-Triangle">this</a> if you want to know
+            how
+            OpenGL
+            works, It's not really
+            a requirement for understanding what I
+            talk about here, but it will enable you to form your own
+            oppinions about what I'm doing)<br /><br /><br />
+            Being furloughed, I decided to start a new game project! Fun right!?
+            These days I've worked myself into a habbit of using engines to write the games I work on (<a
+                href="http://lilrooness.itch.io/control">see recent project here</a>) but recently I've been feeling a
+            bit dissalusioned with them. While they try to be helpful and provide the best abstractions they can,
+            sometimes I think no abstraction is better than a one size fits all code moster that forces you to build
+            software in unnatural ways? I mean the whole Entity/Component thing works fine when you need to support
+            every possible game developer's vision of what they want to create, but when you have something specific in
+            mind, do you really need it?<br /><br />
+
+            Also It's been making me feel a little insecure about my abilities as a
+            programmer. Do I really need these engines as a crutch to create the things I want to make?. SO! It's
+            time to get back to basics.<br /><br />
+
+            I want to make a card game.<br />
+            At a very basic level, this means that I want 2D sprites that I can move
+            around
+            the screen. There will be a spritesheet that I will want to import and pass to the graphics card, and
+            there are going to be a lot aniamtions happening EG chaning colour/position/scale/UVcoords etc
+            ...<br /><br />
+
+            I'm choosing OpenGL for the graphics (I want the ability to program neat hardware accelarated effects and
+            stuff) and SDL2 for handling cross platform widow creation/ input / sound and
+            other game related platform dependent stuff that would otherwise be bit of a pain.<br /><br />
+
+            First of all a note on the style of C++ I'm going to be writing, as the lack of OOP here might scare and
+            confuse people a bit.<br /><br />
+
+            The way I like ot start building out a game project is to have everything global. I might have one game
+            struct that I pass around to every function, but the effect is the same. The thing is, we dont know what
+            we're building yet, so we don't want to add abstractions that we think are sensible now, but that we will
+            have to spend time ripping out later on when we figure out they aren't what we need. After all <a
+                href="https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction?utm_content=buffer3d2a9&utm_medium=social&utm_source=facebook.com&utm_campaign=buffer&fbclid=IwAR2RcS9CofU6A_pbMj0LRznHiF0NHK0OYxkIoCUUnI8ITKtesHWkHUwKGjk">
+                no abstraction is better than the wrong abstraction</a><br /><br />
+            Also, I'm not te biggest fan of classes, I prefer to use structs when I can, besides, we don't really have
+            much use for the C++ RAII stuff here anyway, since (and as you will see) I will tend not to have to release
+            memory that I allocate as we can just reuse it later, and there are very few other resources that we have
+            to care about releasing/destroying besides our one texture, and a few shader files.
+
+            Another supposed benefit of using classes is class hierarchies. I'm not a fan of this either for games, as
+            in C++, when you refer to an object in an abstract way, you have to use a pointer. So if you want an array
+            of abstract "Entities" each element in that array will have to be a pointer to random location on the heap,
+            which really wont have very nice cache behaviour if all we want to do is loop through them.
+
+        <pre>
+            //Entity is some abstract class
+            std::vector&lt;Entity*&gt; enties;
+
+            //Not great cache behaviour
+            for(Entity *e : entities) {
+                e-&gt;x ++;
+                e-&gt;y ++;
+            }
+        </pre>
+
+        Struct's however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
+        have an array of them, they will be layed out in memory as you would expect them to be, one after the other.
+        Meaning that we can let our CPU help us out with stuff like predictive caching and other nice goodness.
+
+        <!-- OpenGL is an API with which you can talk to your graphics card. OpenGL wants to recieve data (vertecies,
+            textures, matriceis) in Buffers or VBOs  -->
+        <!-- <pre>template&lt;typename T&gt;</pre> -->
+        </p>
+    </div>
+
+</body>
+
+</html>

@@ -82,10 +82,91 @@
 
         Struct's however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
         have an array of them, they will be layed out in memory as you would expect them to be, one after the other.
-        Meaning that we can let our CPU help us out with stuff like predictive caching and other nice goodness.
+        Meaning that we can let our CPU help us out with stuff like predictive caching and other nice
+        goodness.<br /><br />
 
-        <!-- OpenGL is an API with which you can talk to your graphics card. OpenGL wants to recieve data (vertecies,
-            textures, matriceis) in Buffers or VBOs  -->
+        Also, the way we are going to want to lay things out in memory requires us to be a little "flexible" with our
+        abstractions too. OpenGL is an API with which you can talk to your graphics card. OpenGL wants to recieve data
+        (vertecies, textures, matriceis) in Buffers that we map from RAM to VRAM, so we are going to want to do things
+        like, store vertecies for things we want to render at the same time, together in one buffer.<br></br>
+
+        Anyway enough talk, lets get to some code, I'm largely going to emit the OpenGL specific code here as its really
+        not what this post is about, if you want to learn about it I recommend (https://learnopengl.com/) most of the
+        begginer stuff there is pretty good (if a little out of date, but itl get ya goin).
+
+        Lets setup something for sprite rendering.
+        I want to be able to do something like this:
+
+        <pre>
+            render(cardSpriteMaterial, cardData);
+            render(candleSpriteMaterial, candleData);
+            render(smokeSpriteMaterial, smokeData);
+        </pre>
+
+        So lets build towards that:
+
+        <pre>
+            struct SpriteMaterial {
+                // just some ID
+                uint id; 
+
+                // this is an thing that identifies to OpenGL a bunch of parameters that we setup somewhere else 
+                uint BufferHandle_VAO; 
+                // vertecies and UV coords of the sprites "model data" which is just points that make up a square
+                uint BufferHandle_vertexAndUVData;
+                // the draw order for the vertecies
+                uint BufferHandle_indexData; 
+
+                // location offsetdata
+                uint BufferHandle_vertexOffsetData; 
+                // offsets for the sprites position in the texture map
+                uint BufferHandle_textureOffsetData; 
+                
+                // something we can multiply the texture colour by if we want to change that
+                uint BufferHandleInstanced_tintData; 
+                // we can use this to alter the scale of the things we draw
+                uint BufferHandleInstanced_scaleData; 
+
+                // id of the shader program we want to use when drawing
+                uint shaderProgramID;
+            }
+        </pre>
+
+        <span class="snippet">uint
+            BufferHandle_...</span> fields are just handles to areas of VRAM.<br /><br />
+
+        Most engines, even the very high level ones, allow you to animate stuff like color, scale and position and I
+        want to be able to quickly fire off animations for stuff like that, which is why I've added the handles to the
+        tint and scale buffers here. The more stuff we can expose at this point the better of we're going to be later
+        but speaking from experience, this this a pretty reasonable abstraction.<br /><br />
+
+        If that wasn't really clear dont worry. I shall explain after this bit ...<br /><br />
+
+        lets make the struct that will hold the actual data referred to by those <span class="snippet">uint
+            BufferHandle_...</span>
+        variables
+
+        <pre>
+            struct SpriteClass {
+                SpriteMaterial material;
+            
+                std::vector&lt;GLfloat&gt; Buffer_vertexOffsetData;
+                std::vector&lt;GLfloat&gt; Buffer_textureOffsetData;
+                std::vector&lt;GLfloat&gt; Buffer_tintValueData;
+                std::vector&lt;GLfloat&gt; Buffer_scaleValueData;
+            
+                bool BufferRefreshFlag_vertexOffsetData;
+                bool BufferRefreshFlag_textureOffsetData;
+                bool BufferRefreshFlag_tintValueData;
+                bool BufferRefreshFlag_scaleValueData;
+            
+                std::vector&lt;SpriteAnimation&gt; scaleAnimations;
+            
+                float defaultScale{ 1.0f };
+            };
+            
+        </pre>
+
         <!-- <pre>template&lt;typename T&gt;</pre> -->
         </p>
     </div>

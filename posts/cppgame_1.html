@@ -13,7 +13,7 @@
     <a class="home_link" href="../index.html">
         <h1 class="title">Joe It Yourself</h1>
     </a>
-    <h2 class="heading">Building Reusable Components for Summoners Table in C++</h2>
+    <h2 class="heading">You Dont Always Need An Engine. Just Build Your Game.</h2>
 
 
     <div class="post">
@@ -50,6 +50,10 @@
             stuff) and SDL2 for handling cross platform widow creation/ input / sound and
             other game related platform dependent stuff that would otherwise be bit of a pain.<br /><br />
 
+            I'm going to talk about the game's animation code here, as It's something that I've always enjoyed having
+            access to in a game engine, and I want to prove that writing this stuff yourself really doesnt have to be
+            that hard.<br /><br />
+
             First of all a note on the style of C++ I'm going to be writing, as the lack of OOP here might scare and
             confuse people a bit.<br /><br />
 
@@ -59,12 +63,16 @@
             have to spend time ripping out later on when we figure out they aren't what we need. After all <a
                 href="https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction?utm_content=buffer3d2a9&utm_medium=social&utm_source=facebook.com&utm_campaign=buffer&fbclid=IwAR2RcS9CofU6A_pbMj0LRznHiF0NHK0OYxkIoCUUnI8ITKtesHWkHUwKGjk">
                 no abstraction is better than the wrong abstraction</a><br /><br />
+
+            Saying that, I am going to be talking about the abstractions that I have found usefull, as I think the
+            patterns that I use here really apply to general game programming.
+
             Also, I'm not te biggest fan of classes, I prefer to use structs when I can, besides, we don't really have
             much use for the C++ RAII stuff here anyway, since (and as you will see) I will tend not to have to release
             memory that I allocate as we can just reuse it later, and there are very few other resources that we have
             to care about releasing/destroying besides our one texture, and a few shader files.
 
-            Another supposed benefit of using classes is class hierarchies. I'm not a fan of this either for games, as
+            Another supposed benefit of using classes are class hierarchies. I'm not a fan of this either for games, as
             in C++, when you refer to an object in an abstract way, you have to use a pointer. So if you want an array
             of abstract "Entities" each element in that array will have to be a pointer to random location on the heap,
             which really wont have very nice cache behaviour if all we want to do is loop through them.
@@ -80,8 +88,9 @@
             }
         </pre>
 
-        Struct's however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
-        have an array of them, they will be layed out in memory as you would expect them to be, one after the other.
+        Structs however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
+        have an array of them, they will be layed out in memory as you would expect them to be, one after the other. No
+        vtables for calling virtual functions, no nasty surprises.
         Meaning that we can let our CPU help us out with stuff like predictive caching and other nice
         goodness.<br /><br />
 
@@ -91,60 +100,28 @@
         like, store vertecies for things we want to render at the same time, together in one buffer.<br></br>
 
         Anyway enough talk, lets get to some code, I'm largely going to emit the OpenGL specific code here as its really
-        not what this post is about, if you want to learn about it I recommend (https://learnopengl.com/) most of the
+        not what this post is about, if you want to learn about it I recommend (<a
+            href="https://learnopengl.com/">https://learnopengl.com/</a>) most of the
         begginer stuff there is pretty good (if a little out of date, but itl get ya goin).
 
         Lets setup something for sprite rendering.
         I want to be able to do something like this:
 
         <pre>
-            render(cardSpriteMaterial, cardData);
-            render(candleSpriteMaterial, candleData);
-            render(smokeSpriteMaterial, smokeData);
+            render(cardSprites);
+            render(candleSprites);
+            render(smokeSprites);
         </pre>
 
-        So lets build towards that:
+        So lets build towards that, this struct holds all the information the graphics card will need to render
+        all
+        sprites of a given type, plus some extra information for animations, and handling VRAM:
 
-        <pre>
-            struct SpriteMaterial {
-                // just some ID
-                uint id; 
-
-                // this is an thing that identifies to OpenGL a bunch of parameters that we setup somewhere else 
-                uint BufferHandle_VAO; 
-                // vertecies and UV coords of the sprites "model data" which is just points that make up a square
-                uint BufferHandle_vertexAndUVData;
-                // the draw order for the vertecies
-                uint BufferHandle_indexData; 
-
-                // location offsetdata
-                uint BufferHandle_vertexOffsetData; 
-                // offsets for the sprites position in the texture map
-                uint BufferHandle_textureOffsetData; 
-                
-                // something we can multiply the texture colour by if we want to change that
-                uint BufferHandleInstanced_tintData; 
-                // we can use this to alter the scale of the things we draw
-                uint BufferHandleInstanced_scaleData; 
-
-                // id of the shader program we want to use when drawing
-                uint shaderProgramID;
-            }
-        </pre>
-
-        <span class="snippet">uint
-            BufferHandle_...</span> fields are just handles to areas of VRAM.<br /><br />
-
-        Most engines, even the very high level ones, allow you to animate stuff like color, scale and position and I
-        want to be able to quickly fire off animations for stuff like that, which is why I've added the handles to the
-        tint and scale buffers here. The more stuff we can expose at this point the better of we're going to be later
-        but speaking from experience, this this a pretty reasonable abstraction.<br /><br />
-
-        If that wasn't really clear dont worry. I shall explain after this bit ...<br /><br />
-
-        lets make the struct that will hold the actual data referred to by those <span class="snippet">uint
-            BufferHandle_...</span>
-        variables
+        <br /><br />(if you heard me talking about happy chache behaviour up there and think that I will be worried
+        about nice
+        struct packing . . . sorry, I've not put any thought at all into that for the purpose of this article . . . - if
+        you have no idea what I'm talking
+        about, then read <a href="http://www.catb.org/esr/structure-packing/">this article</a>)
 
         <pre>
             struct SpriteClass {
@@ -167,7 +144,165 @@
             
         </pre>
 
-        <!-- <pre>template&lt;typename T&gt;</pre> -->
+        <span class="snippet"> Buffer_...</span> fields are areas of memory that we will want to load onto the
+        graphics
+        card. They represent all the rendering data for all the sprites of that type. When we do make a struct to hold
+        gameplay information about the "game object" the sprite belongs so, that struct will hold indexes pointing to
+        their datan in the
+        <span class="snippet">SpriteClass</span> buffers, the
+        BufferRefreshFlag_... fields are markers that allow us to check whether we need to re-load the buffer on
+        to
+        the
+        graphics card because something has changed. Re-loading an entire buffer onto the graphics card every
+        frame
+        isn't really recommended, and there are functions that allow you to only replace part of a buffer, but
+        for
+        the
+        ammount of geometry that we will have, I think it's going to be fine.<br /><br />
+
+        Most engines, even the very high level ones, allow you to animate stuff like color, scale and position
+        and I
+        want to be able to quickly fire off animations for stuff like that, which is why there is a vector of
+        "scale
+        animations" here. I've not included position or tint animations because at the moment my animation
+        system
+        can
+        only really handle 1D interpoltion, and I've not needed to animate any actual movement yet. Which is
+        part of
+        a
+        broader point actually, only write what you need to get the thing you want to make on the screen. We are
+        not
+        writing a game engine here, we're writing a game, and that's an important distinction.<br /><br />
+
+        There's a field here that I won't really get in to much detail about, and that's the <span class="snippet">
+            SpriteMaterial material; </span>. This struct holds OpenGL specific data about which shader program
+        to use, and how to actually draw what we load on the graphics card. It also contains the un-translated
+        array
+        of
+        vertecies and UV coordinates for drawing the "quad" (or square) for each sprite.<br><br>
+
+        Anyway! I promised you an animation system, so an animation system I will deliver! Lets look at the struct for a
+        Card:
+
+        <pre>
+            struct Sprite {
+                int BufferIndex_vertexOffsetData;
+                int BufferIndex_textureOffsetData;
+                int BufferIndex_tintValueData;
+                int BufferIndex_scaleValueData;
+                IndexReference scaleAnimationReference;
+            };
+
+            struct Card {
+                int number;
+                Suit suit;
+                bool deleted;
+                int generation;
+                bool mouseIsHovering{ false };
+                Sprite sprite;
+            };
+        </pre>
+
+        "But Joe!" I hear you say, what is this <span class="snippet">Sprite</span> thing? Well. . . remember how before
+        I mentioned that each "game object" will have have a bunch of indexes into the buffers pointing to their section
+        of data? Well the Sprite struct holds that. All it really does for us is prevent us from having to write those
+        fields down in every game object struct all the time. If I was using a class hierarchy system, I would have made
+        a class Entity which holds all these indexes and then I would extend it to creat each game object, but like I
+        said earlier, why do that when we can just nest one struct inside another? Plus whenever we need a funciton that
+        operates on just the <span class="snippet">Sprite</span> data, it can accept a reference to that thing, no
+        generic template weirdness needed!.<br /><br />
+
+        One field on the <span class="snippet">Sprite</span> that I would like you to ignore right now is the <span
+            class="snippet">IndexReference scaleAnimationReference</span>. What this does will become clearer in the
+        next section.<br /><br />
+
+        Let's have a look at the code to add an animation:
+
+        <pre>
+
+            struct IndexReference {
+                int generation;
+                int index;
+            };
+
+            struct SpriteAnimation {
+                FloatAnimation flaotAnimation;
+                int generation;
+                IndexReference gameObjectReference;
+            };
+
+            IndexReference queueScaleAnimation(SpriteClass&amp; spriteClass, IndexReference gameObjectReference, FloatAnimation flaotAnimation) {
+
+                // if a slot is available (a completed animation is hanging around) reuse it for the new animation
+                for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
+                    if (spriteClass.scaleAnimations[i].flaotAnimation.done) {
+                        spriteClass.scaleAnimations[i].flaotAnimation = floatAnimation;
+                        spriteClass.scaleAnimations[i].generation++;
+                        spriteClass.scaleAnimations[i].gameObjectReference = gameObjectReference;
+                        IndexReference animationReference;
+                        animationReference.generation = spriteClass.scaleAnimations[i].generation;
+                        animationReference.index = i;
+            
+                        return animationReference;
+                    }
+                }
+            
+                // no pre-existing animation slot is available, so add a new one
+                SpriteAnimation spriteAnimation;
+                spriteAnimation.flaotAnimation = floatAnimation;
+                spriteAnimation.gameObjectReference = gameObjectReference;
+                spriteAnimation.generation = 0;
+            
+                IndexReference reference;
+                reference.generation = spriteAnimation.generation;
+                reference.index = spriteClass.scaleAnimations.size();
+            
+                spriteClass.scaleAnimations.push_back(spriteAnimation);
+            
+                return reference;
+            }
+        </pre>
+
+        Ok so there are a few things happening here, lets break this down. First WTF is an IndexReference? Well,
+        remember me saying that we would always try to re-use allocated memory if we could? <br /><br />
+
+        Cards, Animations and other things are all held in vectors, vectors that I would prefer not to have to
+        shrink.
+        The way this will work is when a game object gets deleted for whatever reason, we will set a <span
+            class="snippet"> bool deleted</span> to <span class="snippet">true</span> on that struct. When we next need
+        to add a game object
+        of that
+        type, we will loop through the vector looking for game objects that have been deleted, and replace them with
+        the new one at the same index.<br /><br />
+
+        Cards will get deleted from the game, and other cards will get added all
+        the time, animations will exist for a few frames and then be replaced with other animations, so we need an
+        effective way to refer to a game object, given that it might be gone and something else might exist in its
+        place.<br />
+        <span class="snippet">IndexReference</span> Is a generational index. Each game object, will have
+        an integer representing its "generation", if a game object gets marked for deletion and another thing
+        replaces
+        it, the generation counter gets incremented. So in order to refer to something, we need two pieces of
+        information, the index where it should exist, and the value of the generation when it was created. If we
+        later on try to refer to an object that has been replaced, the generation counter will not match the one we have
+        in the reference, and we know that the thing we are refering to doesn't exist anymore.<br /><br />
+
+        An elegant solution right? Notice that instead of an integer index, we could have used a pointer here, But that
+        would have made the IndexReference struct more complicated as we would have either had to declare the pointer
+        type as void since we don't know what kind of object we will be pointing to, or we would have had to use <span
+            class="snippet">unique_pointer&lt;T&gt;</span> where <span>T</span> is parameterised in a <span
+            class="snippet">template&lt;typename T&gt;</span>, and that's just a whole lot more complicated that it
+        needs to be. The only thing we gain from that is the ability not to care what vector the thing is stored in, but
+        then if you know the game object's type, you you also know what vector it's in. Turn's out we dont need Rust to
+        write memory safe code after all ...<br /><br />
+
+        On to the <span class="snippet">SpriteAnimation</span> struct. This contains a floatAnimation, which just keeps
+        track of the interpolated values and whether or not the aninimation has completed.
+        <span class="snippet"> SpriteAnimation </span> also contains an <span class="snippet">IndexReference</span> to
+        the gameObject which is being animated, and also a generation int, since the animation will also be stored in a
+        vector of other animations and will need to be refered too.<br /><br />
+
+        The function <span class="snippet">queueScaleAnimation</span>
         </p>
     </div>
 

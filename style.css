@@ -10,8 +10,8 @@ body {
     text-align: center;
 }
 
-.post_link {
-    margin-left: 100px;
+.links {
+    text-align: center;
 }
 
 .home_link {
@@ -29,12 +29,16 @@ body {
 
 pre { 
     font-family: monospace;
-    background-color: darkgray;
+    /* background-color: darkgray; */
     font-weight: bold;
 }
 
 .snippet {
     font-family: monospace;
-    background-color: darkgray;
+    /* background-color: darkgray; */
+    font-weight: bold;
+}
+
+.date {
     font-weight: bold;
 }

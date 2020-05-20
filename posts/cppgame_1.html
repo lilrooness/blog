@@ -2,8 +2,11 @@
 
 <head>
 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet"
+    href="../default.min.css">
+<script src="js/highlight.min.js"></script>
     <link rel="stylesheet" href="../style.css" />
+    <script>hljs.initHighlightingOnLoad();</script>
 </head>
 
 <title>JOY</title>
@@ -55,15 +58,14 @@
             access to in a game engine, and I want to prove that writing this stuff yourself really doesn't have to be
             that hard.<br /><br />
 
-            First of all a note on the style of C++ I'm going to be writing, as the lack of OOP here might scare and
-            confuse people a little bit.<br /><br />
+            First of all a note on the style of C++ I'm going to be writing.<br /><br />
 
-            The way I like ot start building out a game project is to have everything global. I might a pointer to a game
+            The way I like to start building out a game project is to have everything global. I might a pointer to a game
             struct that I pass around to every function, but the effect is the same. The thing is when you dont know what you're building yet, 
             you don't want to add abstractions that you think are sensible now, but that you will
             have to spend time ripping out later on when you figure out they aren't what you need. After all <a
                 href="https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction?utm_content=buffer3d2a9&utm_medium=social&utm_source=facebook.com&utm_campaign=buffer&fbclid=IwAR2RcS9CofU6A_pbMj0LRznHiF0NHK0OYxkIoCUUnI8ITKtesHWkHUwKGjk">
-                no abstraction is better than the wrong abstraction</a><br /><br />
+                no abstraction is better than the wrong abstraction</a>.<br /><br />
 
             Saying that, I am going to be talking about the abstractions that, as the development of summoners table has progressed, I have found usefull, as I think the
             patterns that I use here really apply to general game programming.
@@ -78,7 +80,11 @@
             of abstract "Entities" each element in that array will have to be a pointer to random location on the heap,
             which really wont have very nice cache behaviour if all we want to do is loop through them.
 
-        <pre>
+            One more thing, I'm aware that there are libraries like Boost that handle the kind of "object pooling" that I implement myself later on,
+            but for this project I wanted to be a little lean and just do things myself :) Also for the sake of the blog post, I think its nice
+            to arrive at an abstraction organically, rather than dive straight in with a managed solution.<br/><br/>
+
+        <pre><code class="language-c++">
     //Entity is some abstract class
     std::vector&lt;Entity*&gt; entities;
 
@@ -87,7 +93,7 @@
         e-&gt;x ++;
         e-&gt;y ++;
     }
-        </pre>
+        </code></pre>
 
         Structs however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
         have an array of them, they will be layed out in memory as you would expect them to be, one after the other. No
@@ -108,11 +114,11 @@
         Lets setup something for sprite rendering.
         I want to be able to do something like this:
 
-        <pre>
+        <pre><code class="language-c++">
     render(cardSprites);
     render(candleSprites);
     render(smokeSprites);
-        </pre>
+</code></pre>
 
         So lets build towards that. This Struct holds all the information the graphics card will need to have to render
         all sprites of a given type (by type I mean cards, candles, smoke . . .), plus some extra information for animations, and handling VRAM:
@@ -121,7 +127,7 @@
         you have no idea what I'm talking
         about you might find <a href="http://www.catb.org/esr/structure-packing/">this article</a> interesting )
 
-        <pre>
+        <pre><code class="language-c++">
     struct SpriteClass {
         SpriteMaterial material;
 
@@ -140,7 +146,7 @@
         float defaultScale{ 1.0f };
     };
             
-        </pre>
+</code></pre>
 
         <span class="snippet"> Buffer_...</span> fields are areas of memory that we will want to load onto the
         graphics
@@ -182,7 +188,7 @@
         Anyway! I promised you an animation system, so an animation system I will deliver! Lets look at the Struct for a
         Card:
 
-        <pre>
+        <pre><code class="language-c++">
     struct Sprite {
         int BufferIndex_vertexOffsetData;
         int BufferIndex_textureOffsetData;
@@ -199,7 +205,7 @@
         bool mouseIsHovering{ false };
         Sprite sprite;
     };
-        </pre>
+</code></pre>
 
         "But Joe!" I hear you say, what is this <span class="snippet">Sprite</span> thing? Well. . . remember how before
         I mentioned that each "game object" will have have a bunch of indexes into the buffers pointing to their section
@@ -216,7 +222,7 @@
 
         Let's have a look at the code to add an animation:
 
-        <pre>
+        <pre><code class="language-c++">
 
     struct IndexReference {
         int generation;
@@ -233,16 +239,17 @@
 
         // if a slot is available (a completed animation is hanging around) reuse it for the new animation
         for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
-            if (spriteClass.scaleAnimations[i].floatAnimation.done) {
-                spriteClass.scaleAnimations[i].floatAnimation = floatAnimation;
-                spriteClass.scaleAnimations[i].generation++;
-                spriteClass.scaleAnimations[i].gameObjectReference = gameObjectReference;
-                IndexReference animationReference;
-                animationReference.generation = spriteClass.scaleAnimations[i].generation;
-                animationReference.index = i;
-
-                return animationReference;
+            if (!spriteClass.scaleAnimations[i].floatAnimation.done) {
+                continue;
             }
+            spriteClass.scaleAnimations[i].floatAnimation = floatAnimation;
+            spriteClass.scaleAnimations[i].generation++;
+            spriteClass.scaleAnimations[i].gameObjectReference = gameObjectReference;
+            IndexReference animationReference;
+            animationReference.generation = spriteClass.scaleAnimations[i].generation;
+            animationReference.index = i;
+
+            return animationReference;
         }
 
         // no pre-existing animation slot is available, so add a new one
@@ -259,7 +266,7 @@
 
         return reference;
     }
-        </pre>
+</code></pre>
 
         Ok so there are a few things happening here, lets break this down. First WTF is an IndexReference? Well,
         remember me saying that we would always try to re-use allocated memory if we could? <br /><br />
@@ -308,25 +315,26 @@
 
         So what about the code that actually changes the values each tick?
 
-        <pre>
+        <pre><code class="language-c++">
     template&lt;typename T&gt;    
     void resolveScaleAnimations(SpriteClass&amp; spriteClass, std::vector&lt;T&gt;&amp; spriteObjects, float gameTime) {
-            
-            for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
-                
-                // if the animation has not completed, then continue it
-                if (!spriteClass.scaleAnimations[i].floatAnimation.done) {
-                    int spriteIndex = spriteClass.scaleAnimations[i].spriteIndex;
-                    int scaleValueBufferIndex = spriteObjects[spriteIndex].sprite.BufferIndex_scaleValueData;
-                
-                    // here we actually set the new scale value
-                    spriteClass.Buffer_scaleValueData[scaleValueBufferIndex] = getCurrentAnimationValue(spriteClass.scaleAnimations[i].floatAnimation, gameTime);
-                    spriteClass.BufferRefreshFlag_scaleValueData = true;
-                
-                }
+
+        
+        for (int i = 0; i < spriteClass.scaleAnimations.size(); i++) {
+            // if the animation has completed, then skip it
+            if (spriteClass.scaleAnimations[i].floatAnimation.done) {
+                continue;
+            }
+
+            int spriteIndex = spriteClass.scaleAnimations[i].spriteIndex;
+            int scaleValueBufferIndex = spriteObjects[spriteIndex].sprite.BufferIndex_scaleValueData;
+        
+            // here we actually set the new scale value
+            spriteClass.Buffer_scaleValueData[scaleValueBufferIndex] = getCurrentAnimationValue(spriteClass.scaleAnimations[i].floatAnimation, gameTime);
+            spriteClass.BufferRefreshFlag_scaleValueData = true;
             }
         }
-        </pre>
+    </code></pre>
 
         Templates! Yeah I know  ... it's not perfect but it'll do! This function takes a vector of game objects (of type T, which is why we need the template)
         each of which embed a <span class="snippet">Sprite</span> struct. It also takes the corresponding <span class="snippet">SpriteClass</span> struct for that type which contains all the actual data we want to change. We also take the game time.<br/><br/>
@@ -336,10 +344,10 @@
 
         If you're a little confused, this might help. This is how I call the function to update card scale animations:
 
-        <pre>
+        <pre><code class="language-c++">
     // technically we don't need &lt;Card&gt; here as the compiler infers type T from the type of  game.cards
     resolveScaleAnimations&lt;Card&gt;(game.cardSpriteClass, game.cards, game.gameTime);
-        </pre>
+</code></pre>
 
         I hope you have enjoyed reading this :) there are definitely more on the way!
 

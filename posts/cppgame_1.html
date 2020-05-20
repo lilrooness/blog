@@ -79,11 +79,6 @@
             in C++, when you refer to an object in an abstract way, you have to use a pointer. So if you want an array
             of abstract "Entities" each element in that array will have to be a pointer to random location on the heap,
             which really wont have very nice cache behaviour if all we want to do is loop through them.<br /><br />
-
-            One more thing, I'm aware that there are libraries like Boost that handle the kind of "object pooling" that I implement myself later on,
-            but for this project I wanted to be a little lean and just do things myself :) Also for the sake of the blog post, I think its nice
-            to arrive at an abstraction organically, rather than dive straight in with a managed solution.<br/><br/>
-
         <pre><code class="language-c++">
     //Entity is some abstract class
     std::vector&lt;Entity*&gt; entities;
@@ -106,12 +101,12 @@
         (vertices, textures, matrices) in Buffers that we map from RAM to VRAM, so we are going to want to do things
         like, store vertices for things we want to render at the same time, together in one buffer.<br></br>
 
-        Anyway, lets get to some code, I'm largely going to omit the OpenGL specific code here as it's really
+        Anyway, let's get to some code, I'm largely going to omit the OpenGL specific code here as it's really
         not what this post is about, if you want to learn about it I recommend (<a
             href="https://learnopengl.com/">https://learnopengl.com/</a>) most of the
             beginner stuff there is pretty good (if a little out of date, but itl get ya goin).
 
-        Lets setup something for sprite rendering.
+        let's setup something for sprite rendering.
         I want to be able to do something like this:
 
         <pre><code class="language-c++">
@@ -120,7 +115,7 @@
     render(smokeSprites);
 </code></pre>
 
-        So lets build towards that. This Struct holds all the information the graphics card will need to have to render
+        So let's build towards that. This Struct holds all the information the graphics card will need to have to render
         all sprites of a given type (by type I mean cards, candles, smoke . . .), plus some extra information for animations, and handling VRAM:
 
         <br /><br />(I've not put any thought at all into Struct packing/alignment for the purpose of this blog post, sorry about that - if
@@ -185,7 +180,7 @@
         of
         vertecies and UV coordinates for drawing the "quad" (or square) for each sprite.<br><br>
 
-        Anyway! I promised you an animation system, so an animation system I will deliver! Lets look at the Struct for a
+        Anyway! I promised you an animation system, so an animation system I will deliver! let's look at the Struct for a
         Card:
 
         <pre><code class="language-c++">
@@ -268,7 +263,7 @@
     }
 </code></pre>
 
-        Ok so there are a few things happening here, lets break this down. First WTF is an IndexReference? Well,
+        Ok so there are a few things happening here, let's break this down. First WTF is an IndexReference? Well,
         remember me saying that we would always try to re-use allocated memory if we could? <br /><br />
 
         Cards, Animations and other things are all held in vectors, vectors that I would prefer not to have to
@@ -284,7 +279,7 @@
         the time, animations will exist for a few frames and then be replaced with other animations, so we need an
         effective way to refer to a thing, given that it might be gone and something else will exist in its
         place.<br />
-        <span class="snippet">IndexReference</span> Is a generational index. Each game object, will have
+        <span class="snippet">IndexReference</span> is a generational index. Each game object, will have
         an integer representing its "generation", if a game object gets marked for deletion and another thing
         replaces
         it, the generation counter gets incremented. So in order to refer to something, we need two pieces of
@@ -340,7 +335,7 @@
         each of which embed a <span class="snippet">Sprite</span> struct. It also takes the corresponding <span class="snippet">SpriteClass</span> struct for that type which contains all the actual data we want to change. We also take the game time.<br/><br/>
 
         for each scale animation in the sprite class that has not completed, we get the referenced game object, from which we get the location of it's vertex data in the <span class="snippet">SpriteClass</span>'s buffer.
-        Then we call <span class="snippet">getCurrentAnimationValue</span> with the current game time, and voila.
+        Then we call <span class="snippet">getCurrentAnimationValue</span> with the current game time, and voila.<br/><br/>
 
         If you're a little confused, this might help. This is how I call the function to update card scale animations:
 
@@ -349,7 +344,11 @@
     resolveScaleAnimations&lt;Card&gt;(game.cardSpriteClass, game.cards, game.gameTime);
 </code></pre>
 
-        I hope you have enjoyed reading this :) there are definitely more on the way!
+        I hope you have enjoyed reading this :) there are definitely more on the way!<br/><br/>
+
+        One more thing, I'm aware that there are libraries like Boost that handle the kind of "object pooling" that I implement myself.
+        but for this project I wanted to be a little lean and just do things myself :) Also for the sake of the blog post, I think its nice
+        to arrive at an abstraction organically, rather than dive straight in with a managed solution.<br/><br/>
 
         If you would like to talk to me about game development or C++ please email me at 
         <a style="text-decoration: none; font-weight: bold; color: black;" href="mailto:joesgamesbitnbyes@gmail.com">joesgamesbitnbyes@gmail.com</a>

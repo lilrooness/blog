@@ -13,8 +13,8 @@
     <a class="home_link" href="../index.html">
         <h1 class="title">Joe It Yourself</h1>
     </a>
-    <h2 class="heading">You Dont Always Need An Engine. Just Build Your Game.</h2>
-    <h3 class="heading">Part 1. Building an Animation Sytem with C++</h3>
+    <h2 class="heading">You Don't Always Need An Engine. Just Build Your Game.</h2>
+    <h3 class="heading">Part 1. Building an Animation System with C++</h3>
     <p style="text-align: center;"> If you would like to talk to me about game development or C++ please email me! 
         <a style="text-decoration: none; font-weight: bold; color: black;" href="mailto:joesgamesbitnbyes@gmail.com">joesgamesbitnbyes@gmail.com</a>
     </p>
@@ -34,9 +34,9 @@
             a requirement for understanding what I
             talk about here)<br /><br /><br />
 
-            These days I've worked myself into a habbit of using engines to help make the games I work on (<a
+            These days I've worked myself into a habit of using engines to help make the games I work on (<a
                 href="http://lilrooness.itch.io/control">see recent project here</a>) but recently I've been feeling a
-            bit dissalusioned with them. While they try to be helpful and provide the best abstractions they can,
+            bit disillusioned with them. While they try to be helpful and provide the best abstractions they can,
             sometimes I think no abstraction is better than a one size fits all abstraction? I mean the whole Entity/Component
             thing works fine when you need to support every possible game developer's vision of what they want to create,
             but when you have something specific in mind, do you really need it? SO! It's time to get back to basics.<br /><br />
@@ -44,15 +44,15 @@
             Summoners Table is a card game, where you try to summon a demon without letting your candles go out.<br />
             At a very basic level, this means that I want 2D sprites that I can move
             around the screen. There will be a spritesheet that I will want to import and pass to the graphics card, and
-            there are going to be a lot aniamtions happening EG chaning colour/position/scale/UVcoords etc
+            there are going to be a lot animations happening EG changing colour/position/scale/UVcoords etc
             ...<br /><br />
 
-            I'm choosing OpenGL for the graphics (I want the ability to program neat hardware accelarated effects and
+            I'm choosing OpenGL for the graphics (I want the ability to program neat hardware accelerated effects and
             stuff) and SDL2 for handling cross platform widow creation/ input / sound and
             other game related platform dependent stuff that would otherwise be bit of a pain to roll myself.<br /><br />
 
             I'm going to talk about the game's animation code here, as It's something that I've always enjoyed having
-            access to in a game engine, and I want to prove that writing this stuff yourself really doesnt have to be
+            access to in a game engine, and I want to prove that writing this stuff yourself really doesn't have to be
             that hard.<br /><br />
 
             First of all a note on the style of C++ I'm going to be writing, as the lack of OOP here might scare and
@@ -80,7 +80,7 @@
 
         <pre>
             //Entity is some abstract class
-            std::vector&lt;Entity*&gt; enties;
+            std::vector&lt;Entity*&gt; entities;
 
             //Not great cache behaviour
             for(Entity *e : entities) {
@@ -91,19 +91,19 @@
 
         Structs however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
         have an array of them, they will be layed out in memory as you would expect them to be, one after the other. No
-        vtables for calling virtual functions, no nasty surprises.
+        VTables for calling virtual functions, no nasty surprises.
         Meaning that we can let our CPU help us out with stuff like predictive caching and other nice
         goodness.<br /><br />
 
         Also, the way we are going to want to lay things out in memory requires us to be a little "flexible" with our
-        abstractions too. OpenGL is an API with which you can talk to your graphics card. OpenGL wants to recieve data
-        (vertecies, textures, matrices) in Buffers that we map from RAM to VRAM, so we are going to want to do things
-        like, store vertecies for things we want to render at the same time, together in one buffer.<br></br>
+        abstractions too. OpenGL is an API with which you can talk to your graphics card. OpenGL wants to receive data
+        (vertices, textures, matrices) in Buffers that we map from RAM to VRAM, so we are going to want to do things
+        like, store vertices for things we want to render at the same time, together in one buffer.<br></br>
 
         Anyway, lets get to some code, I'm largely going to omit the OpenGL specific code here as it's really
         not what this post is about, if you want to learn about it I recommend (<a
             href="https://learnopengl.com/">https://learnopengl.com/</a>) most of the
-        begginer stuff there is pretty good (if a little out of date, but itl get ya goin).
+            beginner stuff there is pretty good (if a little out of date, but itl get ya goin).
 
         Lets setup something for sprite rendering.
         I want to be able to do something like this:
@@ -114,10 +114,10 @@
             render(smokeSprites);
         </pre>
 
-        So lets build towards that. This struct holds all the information the graphics card will need to have to render
+        So lets build towards that. This Struct holds all the information the graphics card will need to have to render
         all sprites of a given type (by type I mean cards, candles, smoke . . .), plus some extra information for animations, and handling VRAM:
 
-        <br /><br />(I've not put any thought at all into struct packing/allignment for the purpose of this blog post, sorry about that - if
+        <br /><br />(I've not put any thought at all into Struct packing/alignment for the purpose of this blog post, sorry about that - if
         you have no idea what I'm talking
         about you might find <a href="http://www.catb.org/esr/structure-packing/">this article</a> interesting )
 
@@ -144,8 +144,8 @@
 
         <span class="snippet"> Buffer_...</span> fields are areas of memory that we will want to load onto the
         graphics
-        card. They represent all the rendering data for all the sprites of that type. When we do make a struct to hold
-        gameplay information about the "game object" the sprite belongs to, that struct will hold indexes pointing to
+        card. They represent all the rendering data for all the sprites of that type. When we do make a Struct to hold
+        gameplay information about the "game object" the sprite belongs to, that Struct will hold indexes pointing to
         their datan in the
         <span class="snippet">SpriteClass</span> buffers, the
         BufferRefreshFlag_... fields are markers that allow us to check whether we need to re-load the buffer on
@@ -156,7 +156,7 @@
         isn't really recommended, and there are functions that allow you to only replace part of a buffer, but
         for
         the
-        ammount of geometry that we will have, I think it's going to be fine.<br /><br />
+        amount of geometry that we will have, I think it's going to be fine.<br /><br />
 
         Most engines, even the very high level ones, allow you to animate stuff like color, scale and position
         and I
@@ -173,13 +173,13 @@
         writing a game engine here, we're writing a game, and that's an important distinction.<br /><br />
 
         There's a field here that I won't really get in to much detail about, and that's the <span class="snippet">
-            SpriteMaterial material; </span>. This struct holds OpenGL specific data about which shader program
+            SpriteMaterial material; </span>. This Struct holds OpenGL specific data about which shader program
         to use, and how to actually draw what we load on the graphics card. It also contains the un-translated
         array
         of
         vertecies and UV coordinates for drawing the "quad" (or square) for each sprite.<br><br>
 
-        Anyway! I promised you an animation system, so an animation system I will deliver! Lets look at the struct for a
+        Anyway! I promised you an animation system, so an animation system I will deliver! Lets look at the Struct for a
         Card:
 
         <pre>
@@ -206,7 +206,7 @@
         of data? Well the Sprite struct holds that. All it really does is prevent us from having to write those
         fields down in every game object struct all the time. If I was using a class hierarchy system, I would have made
         a class Entity which holds all these indexes and then I would extend it to create each game object, but like I
-        said earlier, why do that when we can just nest one struct inside of another? Plus whenever we need a funciton that
+        said earlier, why do that when we can just nest one struct inside of another? Plus whenever we need a function that
         operates on just the <span class="snippet">Sprite</span> data, it can accept a reference to that thing, no
         generic pointer weirdness needed!.<br /><br />
 
@@ -224,17 +224,17 @@
             };
 
             struct SpriteAnimation {
-                FloatAnimation flaotAnimation;
+                FloatAnimation floatAnimation;
                 int generation;
                 IndexReference gameObjectReference;
             };
 
-            IndexReference queueScaleAnimation(SpriteClass&amp; spriteClass, IndexReference gameObjectReference, FloatAnimation flaotAnimation) {
+            IndexReference queueScaleAnimation(SpriteClass&amp; spriteClass, IndexReference gameObjectReference, FloatAnimation floatAnimation) {
 
                 // if a slot is available (a completed animation is hanging around) reuse it for the new animation
                 for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
-                    if (spriteClass.scaleAnimations[i].flaotAnimation.done) {
-                        spriteClass.scaleAnimations[i].flaotAnimation = floatAnimation;
+                    if (spriteClass.scaleAnimations[i].floatAnimation.done) {
+                        spriteClass.scaleAnimations[i].floatAnimation = floatAnimation;
                         spriteClass.scaleAnimations[i].generation++;
                         spriteClass.scaleAnimations[i].gameObjectReference = gameObjectReference;
                         IndexReference animationReference;
@@ -247,7 +247,7 @@
             
                 // no pre-existing animation slot is available, so add a new one
                 SpriteAnimation spriteAnimation;
-                spriteAnimation.flaotAnimation = floatAnimation;
+                spriteAnimation.floatAnimation = floatAnimation;
                 spriteAnimation.gameObjectReference = gameObjectReference;
                 spriteAnimation.generation = 0;
             
@@ -288,17 +288,17 @@
         An elegant solution right? Notice that instead of an integer index, we could have used a pointer here, But that
         would have made the IndexReference struct more complicated as we would either have had to declare the pointer
         type as void since we don't know what kind of object we will be pointing to, or we would have had to use <span
-            class="snippet">unique_pointer&lt;T&gt;</span> where <span>T</span> is parameterised in a <span
+            class="snippet">unique_pointer&lt;T&gt;</span> where <span>T</span> is parameterized in a <span
             class="snippet">template&lt;typename T&gt;</span>, and that's just a whole lot more complicated that it
         needs to be. The only thing we gain from that is the ability not to care what vector the thing is stored in, but
-        then if you know the game object's type, you you also know what vector it's in. Turn's out we dont need Rust to
+        then if you know the game object's type, you you also know what vector it's in. Turn's out we don't need Rust to
         write memory safe code after all ... ? I kid I kid ;) <br /><br />
 
         On to the <span class="snippet">SpriteAnimation</span> struct. This contains a floatAnimation, which just keeps
-        track of the interpolated values and whether or not the aninimation has completed.
+        track of the interpolated values and whether or not the animation has completed.
         <span class="snippet"> SpriteAnimation </span> also contains an <span class="snippet">IndexReference</span> to
         the gameObject which is being animated, and also a generation <span class="snippet">int</span>, since the animation will be stored in a
-        vector of with animations and it will need to be refered too.<br /><br />
+        vector of with animations and it will need to be referred too.<br /><br />
 
         The function <span class="snippet">queueScaleAnimation</span> simply loops through the animations on a 
         <span class="snippet">SpriteClass</span> struct, looking for ones marked as <span class="snippet">done</span>, 
@@ -315,13 +315,13 @@
                     for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
                         
                         // if the animation has not completed, then continue it
-                        if (!spriteClass.scaleAnimations[i].flaotAnimation.done) {
+                        if (!spriteClass.scaleAnimations[i].floatAnimation.done) {
 
                             int spriteIndex = spriteClass.scaleAnimations[i].spriteIndex;
                             int scaleValueBufferIndex = spriteObjects[spriteIndex].sprite.BufferIndex_scaleValueData;
                         
                             // here we actually set the new scale value
-                            spriteClass.Buffer_scaleValueData[scaleValueBufferIndex] = getCurrentAnimationValue(spriteClass.scaleAnimations[i].flaotAnimation, gameTime);
+                            spriteClass.Buffer_scaleValueData[scaleValueBufferIndex] = getCurrentAnimationValue(spriteClass.scaleAnimations[i].floatAnimation, gameTime);
                             spriteClass.BufferRefreshFlag_scaleValueData = true;
                         
                         }
@@ -330,7 +330,7 @@
         </pre>
 
         Templates! Yeah I know  ... it's not perfect but it'll do! This function takes a vector of game objects (of type T, which is why we need the template)
-        each of which embed a <span class="snippet">Sprite</span> struct. It also takes the corresponding <span class="snippet">SriteClass</span> struct for that type which contains all the actual data we want to change. We also take the game time.<br/><br/>
+        each of which embed a <span class="snippet">Sprite</span> struct. It also takes the corresponding <span class="snippet">SpriteClass</span> struct for that type which contains all the actual data we want to change. We also take the game time.<br/><br/>
 
         for each scale animation in the sprite class that has not completed, we get the referenced game object, from which we get the location of it's vertex data in the <span class="snippet">SpriteClass</span>'s buffer.
         Then we call <span class="snippet">getCurrentAnimationValue</span> with the current game time, and voila.
@@ -338,11 +338,11 @@
         If you're a little confused, this might help. This is how I call the function to update card scale animations:
 
         <pre>
-            // technically we dont need &lt;Card&gt; here as the compiler infers type T from the type of  game.cards
+            // technically we don't need &lt;Card&gt; here as the compiler infers type T from the type of  game.cards
             resolveScaleAnimations&lt;Card&gt;(game.cardSpriteClass, game.cards, game.gameTime);
         </pre>
 
-        I hope you have enjoyed reading this :) there are diffinitely more on the way!
+        I hope you have enjoyed reading this :) there are definitely more on the way!
 
         If you would like to talk to me about game development or C++ please email me at 
         <a style="text-decoration: none; font-weight: bold; color: black;" href="mailto:joesgamesbitnbyes@gmail.com">joesgamesbitnbyes@gmail.com</a>

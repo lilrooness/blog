@@ -68,17 +68,17 @@
                 no abstraction is better than the wrong abstraction</a>.<br /><br />
 
             Saying that, I am going to be talking about the abstractions that, as the development of summoners table has progressed, I have found usefull, as I think the
-            patterns that I use here really apply to general game programming.
+            patterns that I use here really apply to general game programming.<br /><br />
 
             Also, I'm not te biggest fan of classes, I prefer to use structs when I can, besides, we don't really have
             much use for the C++ RAII stuff here anyway, since (and as you will see) I will tend not to have to release
             the memory that I allocate as I can just reuse it later, and there are very few other resources that I have
-            to care about releasing/destroying besides our one texture, some music, and a few shader files.
+            to care about releasing/destroying besides our one texture, some music, and a few shader files.<br /><br />
 
-            Another supposed benefit of using classes are class hierarchies. I'm not a fan of this either for games, as
+            Another benefit of using classes are class hierarchies. I don't plan on using them for this game, as
             in C++, when you refer to an object in an abstract way, you have to use a pointer. So if you want an array
             of abstract "Entities" each element in that array will have to be a pointer to random location on the heap,
-            which really wont have very nice cache behaviour if all we want to do is loop through them.
+            which really wont have very nice cache behaviour if all we want to do is loop through them.<br /><br />
 
             One more thing, I'm aware that there are libraries like Boost that handle the kind of "object pooling" that I implement myself later on,
             but for this project I wanted to be a little lean and just do things myself :) Also for the sake of the blog post, I think its nice

@@ -1,44 +1,52 @@
 body {
-    font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
 }
 
 .title {
-    text-align: center;
+  text-align: center;
 }
 
 .heading {
-    text-align: center;
+  text-align: center;
 }
 
 .links {
-    text-align: center;
+  text-align: center;
 }
 
 .home_link {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 .post {
-    margin: auto;
-    
-    width: 80%;
- 
-    font-size: large;
-    /* font-weight: 600; */
+  margin: auto;
+  margin-top: 100px;
+
+  width: 80%;
+
+  font-size: large;
+  /* font-weight: 600; */
 }
 
-pre { 
-    font-family: monospace;
-    /* background-color: darkgray; */
-    font-weight: bold;
+pre {
+  font-family: monospace;
+  /* background-color: darkgray; */
+  font-weight: bold;
 }
 
 .snippet {
-    font-family: monospace;
-    /* background-color: darkgray; */
-    font-weight: bold;
+  font-family: monospace;
+  /* background-color: darkgray; */
+  font-weight: bold;
 }
 
 .date {
-    font-weight: bold;
+  font-weight: bold;
+}
+
+img {
+  margin: auto;
+  margin-top: 50px;
+  margin-bottom: 50px;
+  display: block;
 }

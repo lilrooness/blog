@@ -79,14 +79,14 @@
             which really wont have very nice cache behaviour if all we want to do is loop through them.
 
         <pre>
-            //Entity is some abstract class
-            std::vector&lt;Entity*&gt; entities;
+    //Entity is some abstract class
+    std::vector&lt;Entity*&gt; entities;
 
-            //Not great cache behaviour
-            for(Entity *e : entities) {
-                e-&gt;x ++;
-                e-&gt;y ++;
-            }
+    //Not great cache behaviour
+    for(Entity *e : entities) {
+        e-&gt;x ++;
+        e-&gt;y ++;
+    }
         </pre>
 
         Structs however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
@@ -109,9 +109,9 @@
         I want to be able to do something like this:
 
         <pre>
-            render(cardSprites);
-            render(candleSprites);
-            render(smokeSprites);
+    render(cardSprites);
+    render(candleSprites);
+    render(smokeSprites);
         </pre>
 
         So lets build towards that. This Struct holds all the information the graphics card will need to have to render
@@ -122,23 +122,23 @@
         about you might find <a href="http://www.catb.org/esr/structure-packing/">this article</a> interesting )
 
         <pre>
-            struct SpriteClass {
-                SpriteMaterial material;
-            
-                std::vector&lt;GLfloat&gt; Buffer_vertexOffsetData;
-                std::vector&lt;GLfloat&gt; Buffer_textureOffsetData;
-                std::vector&lt;GLfloat&gt; Buffer_tintValueData;
-                std::vector&lt;GLfloat&gt; Buffer_scaleValueData;
-            
-                bool BufferRefreshFlag_vertexOffsetData;
-                bool BufferRefreshFlag_textureOffsetData;
-                bool BufferRefreshFlag_tintValueData;
-                bool BufferRefreshFlag_scaleValueData;
-            
-                std::vector&lt;SpriteAnimation&gt; scaleAnimations;
-            
-                float defaultScale{ 1.0f };
-            };
+    struct SpriteClass {
+        SpriteMaterial material;
+
+        std::vector&lt;GLfloat&gt; Buffer_vertexOffsetData;
+        std::vector&lt;GLfloat&gt; Buffer_textureOffsetData;
+        std::vector&lt;GLfloat&gt; Buffer_tintValueData;
+        std::vector&lt;GLfloat&gt; Buffer_scaleValueData;
+
+        bool BufferRefreshFlag_vertexOffsetData;
+        bool BufferRefreshFlag_textureOffsetData;
+        bool BufferRefreshFlag_tintValueData;
+        bool BufferRefreshFlag_scaleValueData;
+
+        std::vector&lt;SpriteAnimation&gt; scaleAnimations;
+
+        float defaultScale{ 1.0f };
+    };
             
         </pre>
 
@@ -183,22 +183,22 @@
         Card:
 
         <pre>
-            struct Sprite {
-                int BufferIndex_vertexOffsetData;
-                int BufferIndex_textureOffsetData;
-                int BufferIndex_tintValueData;
-                int BufferIndex_scaleValueData;
-                IndexReference scaleAnimationReference;
-            };
+    struct Sprite {
+        int BufferIndex_vertexOffsetData;
+        int BufferIndex_textureOffsetData;
+        int BufferIndex_tintValueData;
+        int BufferIndex_scaleValueData;
+        IndexReference scaleAnimationReference;
+    };
 
-            struct Card {
-                int number;
-                Suit suit;
-                bool deleted;
-                int generation;
-                bool mouseIsHovering{ false };
-                Sprite sprite;
-            };
+    struct Card {
+        int number;
+        Suit suit;
+        bool deleted;
+        int generation;
+        bool mouseIsHovering{ false };
+        Sprite sprite;
+    };
         </pre>
 
         "But Joe!" I hear you say, what is this <span class="snippet">Sprite</span> thing? Well. . . remember how before
@@ -218,47 +218,47 @@
 
         <pre>
 
-            struct IndexReference {
-                int generation;
-                int index;
-            };
+    struct IndexReference {
+        int generation;
+        int index;
+    };
 
-            struct SpriteAnimation {
-                FloatAnimation floatAnimation;
-                int generation;
-                IndexReference gameObjectReference;
-            };
+    struct SpriteAnimation {
+        FloatAnimation floatAnimation;
+        int generation;
+        IndexReference gameObjectReference;
+    };
 
-            IndexReference queueScaleAnimation(SpriteClass&amp; spriteClass, IndexReference gameObjectReference, FloatAnimation floatAnimation) {
+    IndexReference addScaleAnimation(SpriteClass&amp; spriteClass, IndexReference gameObjectReference, FloatAnimation floatAnimation) {
 
-                // if a slot is available (a completed animation is hanging around) reuse it for the new animation
-                for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
-                    if (spriteClass.scaleAnimations[i].floatAnimation.done) {
-                        spriteClass.scaleAnimations[i].floatAnimation = floatAnimation;
-                        spriteClass.scaleAnimations[i].generation++;
-                        spriteClass.scaleAnimations[i].gameObjectReference = gameObjectReference;
-                        IndexReference animationReference;
-                        animationReference.generation = spriteClass.scaleAnimations[i].generation;
-                        animationReference.index = i;
-            
-                        return animationReference;
-                    }
-                }
-            
-                // no pre-existing animation slot is available, so add a new one
-                SpriteAnimation spriteAnimation;
-                spriteAnimation.floatAnimation = floatAnimation;
-                spriteAnimation.gameObjectReference = gameObjectReference;
-                spriteAnimation.generation = 0;
-            
-                IndexReference reference;
-                reference.generation = spriteAnimation.generation;
-                reference.index = spriteClass.scaleAnimations.size();
-            
-                spriteClass.scaleAnimations.push_back(spriteAnimation);
-            
-                return reference;
+        // if a slot is available (a completed animation is hanging around) reuse it for the new animation
+        for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
+            if (spriteClass.scaleAnimations[i].floatAnimation.done) {
+                spriteClass.scaleAnimations[i].floatAnimation = floatAnimation;
+                spriteClass.scaleAnimations[i].generation++;
+                spriteClass.scaleAnimations[i].gameObjectReference = gameObjectReference;
+                IndexReference animationReference;
+                animationReference.generation = spriteClass.scaleAnimations[i].generation;
+                animationReference.index = i;
+
+                return animationReference;
             }
+        }
+
+        // no pre-existing animation slot is available, so add a new one
+        SpriteAnimation spriteAnimation;
+        spriteAnimation.floatAnimation = floatAnimation;
+        spriteAnimation.gameObjectReference = gameObjectReference;
+        spriteAnimation.generation = 0;
+
+        IndexReference reference;
+        reference.generation = spriteAnimation.generation;
+        reference.index = spriteClass.scaleAnimations.size();
+
+        spriteClass.scaleAnimations.push_back(spriteAnimation);
+
+        return reference;
+    }
         </pre>
 
         Ok so there are a few things happening here, lets break this down. First WTF is an IndexReference? Well,
@@ -300,7 +300,7 @@
         the gameObject which is being animated, and also a generation <span class="snippet">int</span>, since the animation will be stored in a
         vector of with animations and it will need to be referred too.<br /><br />
 
-        The function <span class="snippet">queueScaleAnimation</span> simply loops through the animations on a 
+        The function <span class="snippet">addScaleAnimation</span> simply loops through the animations on a 
         <span class="snippet">SpriteClass</span> struct, looking for ones marked as <span class="snippet">done</span>, 
         if it finds one, it replaces it with the new animation (and increments the generation counter), if not, then a 
         new animation (with a generation of 0) is pushed on to the end of the <span class="snippet">spriteAnimations</span>
@@ -309,24 +309,23 @@
         So what about the code that actually changes the values each tick?
 
         <pre>
-            template&lt;typename T&gt;    
-            void resolveScaleAnimations(SpriteClass&amp; spriteClass, std::vector&lt;T&gt;&amp; spriteObjects, float gameTime) {
-                    
-                    for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
-                        
-                        // if the animation has not completed, then continue it
-                        if (!spriteClass.scaleAnimations[i].floatAnimation.done) {
-
-                            int spriteIndex = spriteClass.scaleAnimations[i].spriteIndex;
-                            int scaleValueBufferIndex = spriteObjects[spriteIndex].sprite.BufferIndex_scaleValueData;
-                        
-                            // here we actually set the new scale value
-                            spriteClass.Buffer_scaleValueData[scaleValueBufferIndex] = getCurrentAnimationValue(spriteClass.scaleAnimations[i].floatAnimation, gameTime);
-                            spriteClass.BufferRefreshFlag_scaleValueData = true;
-                        
-                        }
-                    }
+    template&lt;typename T&gt;    
+    void resolveScaleAnimations(SpriteClass&amp; spriteClass, std::vector&lt;T&gt;&amp; spriteObjects, float gameTime) {
+            
+            for (int i = 0; i &lt; spriteClass.scaleAnimations.size(); i++) {
+                
+                // if the animation has not completed, then continue it
+                if (!spriteClass.scaleAnimations[i].floatAnimation.done) {
+                    int spriteIndex = spriteClass.scaleAnimations[i].spriteIndex;
+                    int scaleValueBufferIndex = spriteObjects[spriteIndex].sprite.BufferIndex_scaleValueData;
+                
+                    // here we actually set the new scale value
+                    spriteClass.Buffer_scaleValueData[scaleValueBufferIndex] = getCurrentAnimationValue(spriteClass.scaleAnimations[i].floatAnimation, gameTime);
+                    spriteClass.BufferRefreshFlag_scaleValueData = true;
+                
                 }
+            }
+        }
         </pre>
 
         Templates! Yeah I know  ... it's not perfect but it'll do! This function takes a vector of game objects (of type T, which is why we need the template)
@@ -338,8 +337,8 @@
         If you're a little confused, this might help. This is how I call the function to update card scale animations:
 
         <pre>
-            // technically we don't need &lt;Card&gt; here as the compiler infers type T from the type of  game.cards
-            resolveScaleAnimations&lt;Card&gt;(game.cardSpriteClass, game.cards, game.gameTime);
+    // technically we don't need &lt;Card&gt; here as the compiler infers type T from the type of  game.cards
+    resolveScaleAnimations&lt;Card&gt;(game.cardSpriteClass, game.cards, game.gameTime);
         </pre>
 
         I hope you have enjoyed reading this :) there are definitely more on the way!

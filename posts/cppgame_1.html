@@ -18,7 +18,7 @@
     </a>
     <h2 class="heading">You Don't Always Need An Engine. Just Build Your Game.</h2>
     <h3 class="heading">Part 1. Building an Animation System with C++</h3>
-    <p style="text-align: center;"> If you would like to talk to me about game development or C++ please email me! 
+    <p style="text-align: center;"> If you would like to talk to me about game development or C++ (or maybe you just want to correct something that i've got wrong here) please email me! 
         <a style="text-decoration: none; font-weight: bold; color: black;" href="mailto:joesgamesbitnbyes@gmail.com">joesgamesbitnbyes@gmail.com</a>
     </p>
 
@@ -37,48 +37,50 @@
             a requirement for understanding what I
             talk about here)<br /><br /><br />
 
-            These days I've worked myself into a habit of using engines to help make the games I work on (<a
-                href="http://lilrooness.itch.io/control">see recent project here</a>) but recently I've been feeling a
+            Over time I've worked myself into a habit of using engines to help make the games I work on (<a
+                href="http://lilrooness.itch.io/control">see a recent project here</a>). But recently I've been feeling a
             bit disillusioned with them. While they try to be helpful and provide the best abstractions they can,
-            sometimes I think no abstraction is better than a one size fits all abstraction? I mean the whole Entity/Component
-            thing works fine when you need to support every possible game developer's vision of what they want to create,
-            but when you have something specific in mind, do you really need it? SO! It's time to get back to basics.<br /><br />
+            sometimes I think no abstraction is better than a one size fits all abstraction. I mean the whole Entity/Component
+            thing works fine when you need to support every possible game developer's vision of what they want to create.
+            But, when you have something specific in mind, do you really need it? SO! It's time to get back to basics.<br /><br />
 
-            Summoners Table is a card game, where you try to summon a demon without letting your candles go out.<br />
-            At a very basic level, this means that I want 2D sprites that I can move
-            around the screen. There will be a spritesheet that I will want to import and pass to the graphics card, and
-            there are going to be a lot animations happening EG changing colour/position/scale/UVcoords etc
+            Summoner's Table is a card game, where you try to summon a demon without letting your candles go out.
+            At a very basic level, this means that I want 2D Sprites that I can move
+            around the screen. There will be a Spritesheet that I will want to import and pass to the graphics card, and
+            there are going to be lots animations happening e.g. changing colour/position/scale/UVcoords etc
             ...<br /><br />
 
             I'm choosing OpenGL for the graphics (I want the ability to program neat hardware accelerated effects and
-            stuff) and SDL2 for handling cross platform widow creation/ input / sound and
-            other game related platform dependent stuff that would otherwise be bit of a pain to roll myself.<br /><br />
+            stuff) and SDL2 for handling cross platform widow creation/ input and sound.
+            SDL2 is great when you need to handle game related platform dependent stuff that would otherwise be bit of a pain to roll yourself.<br /><br />
 
-            I'm going to talk about the game's animation code here, as It's something that I've always enjoyed having
-            access to in a game engine, and I want to prove that writing this stuff yourself really doesn't have to be
+            In this blog post, I'm going to talk about the animation system, as It's something that I've always enjoyed having
+            access to in game engines, and I want to prove that writing this stuff yourself really doesn't have to be
             that hard.<br /><br />
 
             First of all a note on the style of C++ I'm going to be writing.<br /><br />
 
-            The way I like to start building out a game project is to have everything global. I might a pointer to a game
-            struct that I pass around to every function, but the effect is the same. The thing is when you dont know what you're building yet, 
-            you don't want to add abstractions that you think are sensible now, but that you will
-            have to spend time ripping out later on when you figure out they aren't what you need. After all <a
+            The way I like to start building out a game project is to have everything global. I might use a pointer to a game
+            struct that I pass around to every function, but the effect is the same. When you're writing a game, you have to be flexible and open to change, 
+            as a lot of the time, you don't know what mechanics are going to work until you try them. Sometimes, 
+            the game you end up creating is completely different from the game you thought you were going to make.
+            The thing is when you don't know what the end product will look like, you want to avoid adding abstractions that you think are sensible now, but that you will
+            have to spend time ripping out later. After all <a
                 href="https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction?utm_content=buffer3d2a9&utm_medium=social&utm_source=facebook.com&utm_campaign=buffer&fbclid=IwAR2RcS9CofU6A_pbMj0LRznHiF0NHK0OYxkIoCUUnI8ITKtesHWkHUwKGjk">
                 no abstraction is better than the wrong abstraction</a>.<br /><br />
 
-            Saying that, I am going to be talking about the abstractions that, as the development of summoners table has progressed, I have found usefull, as I think the
+            Saying that, I am going to be talking about the abstractions that, as the development of Summoner's Table has progressed, I have found useful, as I think the
             patterns that I use here really apply to general game programming.<br /><br />
 
-            Also, I'm not te biggest fan of classes, I prefer to use structs when I can, besides, we don't really have
+            Also, I'm not te biggest fan of classes, I prefer to write structs whenever I can. Besides, I don't really have
             much use for the C++ RAII stuff here anyway, since (and as you will see) I will tend not to have to release
-            the memory that I allocate as I can just reuse it later, and there are very few other resources that I have
+            the memory that I allocate as I can just reuse it later. There are very few other resources that I have
             to care about releasing/destroying besides our one texture, some music, and a few shader files.<br /><br />
 
             Another benefit of using classes are class hierarchies. I don't plan on using them for this game, as
-            in C++, when you refer to an object in an abstract way, you have to use a pointer. So if you want an array
-            of abstract "Entities" each element in that array will have to be a pointer to random location on the heap,
-            which really wont have very nice cache behaviour if all we want to do is loop through them.<br /><br />
+            in C++, when you refer to something and you don't know it's size (as its polymorphic, and you just know that it's an Entity of some kind), you have to use a pointer. So if you want an array
+            of abstract polymorphic "Entities" each element in that array will have to be a pointer to a random location on the heap.
+            This really wont have very nice cache behaviour if all we want to do is loop through them.<br /><br />
         <pre><code class="language-c++">
     //Entity is some abstract class
     std::vector&lt;Entity*&gt; entities;
@@ -90,16 +92,14 @@
     }
         </code></pre>
 
-        Structs however (or objects of flat classes for that matter) can just be allocated "as is" and if you want to
-        have an array of them, they will be layed out in memory as you would expect them to be, one after the other. No
-        VTables for calling virtual functions, no nasty surprises.
-        Meaning that we can let our CPU help us out with stuff like predictive caching and other nice
+        Structs however (or anything that you know the size of at compile time, be that ints chars or plain classes) can just be allocated contiguously on the stack.
+        This means that we can let our CPU help us out with stuff like predictive caching and other nice
         goodness.<br /><br />
 
         Also, the way we are going to want to lay things out in memory requires us to be a little "flexible" with our
-        abstractions too. OpenGL is an API with which you can talk to your graphics card. OpenGL wants to receive data
-        (vertices, textures, matrices) in Buffers that we map from RAM to VRAM, so we are going to want to do things
-        like, store vertices for things we want to render at the same time, together in one buffer.<br></br>
+        abstractions too. OpenGL is an API with which you can talk to your graphics card. As such, it wants to receive data
+        (vertices, textures, matrices) in Buffers that we map from RAM to VRAM (graphics card memory). We are going to want to do things
+        like storing vertices for things we want to render at the same time, together in one buffer.<br></br>
 
         Anyway, let's get to some code, I'm largely going to omit the OpenGL specific code here as it's really
         not what this post is about, if you want to learn about it I recommend <a
@@ -113,14 +113,14 @@
     render(cardSprites);
     render(candleSprites);
     render(smokeSprites);
-</code></pre>
+        </code></pre>
 
-        So let's build towards that. This Struct holds all the information the graphics card will need to have to render
-        all sprites of a given type (by type I mean cards, candles, smoke . . .), plus some extra information for animations, and handling VRAM:
+        So let's build towards that. This Struct holds all the information that the graphics card will need to in order to render
+        all Sprites of a given type (by types I mean cards, candles, smoke . . .), plus some extra information for animations, and handling VRAM.
 
         <br /><br />(I've not put any thought at all into Struct packing/alignment for the purpose of this blog post, sorry about that - if
         you have no idea what I'm talking
-        about you might find <a href="http://www.catb.org/esr/structure-packing/">this article</a> interesting)
+        about then you might find <a href="http://www.catb.org/esr/structure-packing/">this article</a> very interesting)
 
         <pre><code class="language-c++">
     struct SpriteClass {
@@ -143,44 +143,30 @@
             
 </code></pre>
 
-        <span class="snippet"> Buffer_...</span> fields are areas of memory that we will want to load onto the
+        <span class="snippet"> Buffer_...</span> fields are vectors that we will want to load onto the
         graphics
-        card. They represent all the rendering data for all the sprites of that type. When we do make a Struct to hold
-        gameplay information about the "game object" the sprite belongs to, that Struct will hold indexes pointing to
-        their datan in the
-        <span class="snippet">SpriteClass</span> buffers, the
-        BufferRefreshFlag_... fields are markers that allow us to check whether we need to re-load the buffer on
+        card (vector in the C++ STL sense, not the mathematical sense. Really, why did they name it like this?). They represent all the rendering data for all the sprites of that type. When we want create a Struct to hold
+        gameplay information about a "game object" (a card, a candle, a spell ...) a sprite represents, that Struct will hold indexes pointing to the rendering data in the <span class="snippet">SpriteClass</span> vectors. 
+        The BufferRefreshFlag_... fields are markers that allow us to check whether we need to re-load a vector on
         to
         the
-        graphics card because something has changed. Re-loading an entire buffer onto the graphics card every
-        frame
-        isn't really recommended, and there are functions that allow you to only replace part of a buffer, but
-        for
-        the
-        amount of geometry that we will have, I think it's going to be fine.<br /><br />
+        graphics card because something has changed. Re-loading an entire VRAM buffer every
+        frame isn't really recommended, and there are OpenGL functions that allow you to reload only part of a buffer. But,
+        for the amount of geometry that I have, I think it's going to be fine for now.<br /><br />
 
-        Most engines, even the very high level ones, allow you to animate stuff like color, scale and position
+        A nice feature of most engines, is the ability to animate things like color, scale and position
         and I
-        want to be able to quickly fire off animations for stuff like that, which is why there is a vector of
-        "scale
-        animations" here. I've not included position or colour animations because at the moment my animation
-        system
-        can
-        only really handle 1D interpolation, and I've not needed to animate any actual movement or colour changes yet. Which is
-        part of
-        a
-        broader point actually, only write what you need to get the thing you want to make on the screen. We are
-        not
-        writing a game engine here, we're writing a game, and that's an important distinction.<br /><br />
+        want to be able to quickly fire off animations for stuff like that. This is why there is a vector of
+        "scale animations" here. I've not included position or colour animations because at the moment my animation
+        system can only really handle 1-dimensional interpolations, and I've not needed to animate any actual movement or colour changes yet. Which is
+        part of a broader point actually, only write what you need to get the thing you want to make on the screen. We're
+        not writing a game engine here, we're writing a game, and that's an important distinction.<br /><br />
 
-        There's a field here that I won't really get in to much detail about, and that's the <span class="snippet">
-            SpriteMaterial material; </span>. This Struct holds OpenGL specific data about which shader program
-        to use, and how to actually draw what we load on the graphics card. It also contains the un-translated
-        array
-        of
-        vertecies and UV coordinates for drawing the "quad" (or square) for each sprite.<br><br>
+        There's a field here that I won't get in to too much detail about, and that's the '<span class="snippet">
+        SpriteMaterial material;</span>'. This Struct holds OpenGL specific data about which shader program
+        to use when rendering, and how to actually draw the vertices in VRAM.<br><br>
 
-        Anyway! I promised you an animation system, so an animation system I will deliver! let's look at the Struct for a
+        Anyway! I promised you an animation system, and an animation system I will deliver! We're making a card game, so let's look at the Struct for a
         Card:
 
         <pre><code class="language-c++">
@@ -202,20 +188,20 @@
     };
 </code></pre>
 
-        "But Joe!" I hear you say, what is this <span class="snippet">Sprite</span> thing? Well. . . remember how before
-        I mentioned that each "game object" will have have a bunch of indexes into the buffers pointing to their section
-        of data? Well the Sprite struct holds that. All it really does is prevent us from having to write those
+        "But Joe!" I hear you say, "What's this <span class="snippet">Sprite</span> thing?" Well remember I mentioned
+        that each "game object" will have have a bunch of indexes into <span class="snippet">SpriteClass</span> vectors pointing to their section
+        of data? Well the Sprite struct holds those indexes. All it really does is prevent us from having to write those
         fields down in every game object struct all the time. If I was using a class hierarchy system, I would have made
-        a class Entity which holds all these indexes and then I would extend it to create each game object, but like I
-        said earlier, why do that when we can just nest one struct inside of another? Plus whenever we need a function that
-        operates on just the <span class="snippet">Sprite</span> data, it can accept a reference to that thing, no
-        generic pointer weirdness needed!.<br /><br />
+        a class Entity which holds all these indexes and then I would extend it to create each game object, but why do that
+        when we can just nest one struct inside of another? Plus whenever we need a function that
+        operates on just the <span class="snippet">Sprite</span> data, it can accept a reference to the <span class="snippet">Sprite</span>, no
+        generic pointer weirdness needed!. Composition over inheritance!<br /><br />
 
         One field on the <span class="snippet">Sprite</span> that I would like you to ignore right now is the <span
             class="snippet">IndexReference scaleAnimationReference</span>. What this does will become clearer in the
         next section.<br /><br />
 
-        Let's have a look at the code to add an animation:
+        Let's have a look at the code that adds animations:
 
         <pre><code class="language-c++">
 
@@ -263,50 +249,48 @@
     }
 </code></pre>
 
-        Ok so there are a few things happening here, let's break this down. First WTF is an IndexReference? Well,
+        Ok so there are a few things happening here, let's break this down. First what is an IndexReference? Well,
         remember me saying that we would always try to re-use allocated memory if we could? <br /><br />
 
-        Cards, Animations and other things are all held in vectors, vectors that I would prefer not to have to
+        Cards, Animations and other things are all held in vectors (again ... the C++ STL kind), vectors that I would prefer not to have to
         shrink.
-        The way this will work is when a game object gets deleted for whatever reason, we will set a <span
-            class="snippet"> bool deleted</span> to <span class="snippet">true</span> on that struct. When we next need
+        The way this will work is that when when we want to delete game object, we will set it's <span
+            class="snippet"> bool deleted</span> flag to <span class="snippet">true</span>. When we next need
         to add a game object
         of that
-        type, we will loop through the vector looking for game objects that have been deleted, and replace them with
+        type, we will loop through existing game objects looking for one marked as deleted, and replace it with
         the new one at the same index.<br /><br />
 
-        Cards will get deleted from the game, and other cards will get added all
-        the time, animations will exist for a few frames and then be replaced with other animations, so we need an
-        effective way to refer to a thing, given that it might be gone and something else will exist in its
-        place.<br />
+        Cards will get deleted from the game and other cards will get added all
+        the time. Animations will exist for a fraction of a second and then be replaced with other animations. So we need an
+        effective way to refer to a thing, given that it might be gone and something else might exist in its
+        place.<br /><br/>
         <span class="snippet">IndexReference</span> is a generational index. Each game object, will have
         an integer representing its "generation", if a game object gets marked for deletion and another thing
         replaces
-        it, the generation counter gets incremented. So in order to refer to something, we need two pieces of
-        data, the index where it should exist, and the value of the generation when it was created. If we
+        it, it's generation counter gets incremented. So in order to refer to something, we need two pieces of
+        data, the index where it's stored in the vector, and the value of its generation when it was created. If we
         later on try to refer to an object that has been replaced, the generation counter will not match the one we have
-        in the reference, and we know that the thing we are referring to doesn't exist anymore.<br /><br />
+        in the reference, and we will know that the thing we are referencing doesn't exist anymore.<br /><br />
 
-        An elegant solution right? Notice that instead of an integer index, we could have used a pointer here, But that
-        would have made the IndexReference struct more complicated as we would either have had to declare the pointer
-        type as void since we don't know what kind of object we will be pointing to, or we would have had to use <span
+        An elegant solution right? Notice that instead of an integer index, we could have used a pointer here, but that
+        would have made the IndexReference struct more complicated. We would either have had to declare the pointer
+        type as void since we don't know what kind of object we want it to point to, or we would have had to use <span
             class="snippet">unique_pointer&lt;T&gt;</span> where <span>T</span> is parameterized in a <span
-            class="snippet">template&lt;typename T&gt;</span>, and that's just a whole lot more complicated that it
-        needs to be. The only thing we gain from that is the ability not to care what vector the thing is stored in, but
-        then if you know the game object's type, you you also know what vector it's in. Turns out we don't need Rust to
-        write memory safe code after all ... ? I kid I kid ;) <br /><br />
+            class="snippet">template&lt;typename T&gt;</span>. That's just a whole lot more complicated that it
+        needs to be. The only thing we gain from that is the ability not to care what vector the thing is stored in. But
+        then if you know the game object's type, you also know what vector it's in.<br /><br />
 
-        On to the <span class="snippet">SpriteAnimation</span> struct. This contains a floatAnimation, which just keeps
+        On to the <span class="snippet">SpriteAnimation</span> struct. This contains a <span class="snippet">floatAnimation</span>, which just keeps
         track of the interpolated values and whether or not the animation has completed.
-        <span class="snippet"> SpriteAnimation </span> also contains an <span class="snippet">IndexReference</span> to
-        the gameObject which is being animated, and also a generation <span class="snippet">int</span>, since the animation will be stored in a
-        vector of with animations and it will need to be referred too.<br /><br />
+        an <span class="snippet">IndexReference</span> referring to
+        the gameObject which is being animated, and also a generation <span class="snippet">int</span>. The generation counter is needed because the animation will be stored in a
+        vector and it will need to be referred too.<br /><br />
 
         The function <span class="snippet">addScaleAnimation</span> simply loops through the animations on a 
-        <span class="snippet">SpriteClass</span> struct, looking for ones marked as <span class="snippet">done</span>, 
+        <span class="snippet">SpriteClass</span> Struct, looking for ones marked as <span class="snippet">done</span>, 
         if it finds one, it replaces it with the new animation (and increments the generation counter), if not, then a 
-        new animation (with a generation of 0) is pushed on to the end of the <span class="snippet">spriteAnimations</span>
-         vector.<br/><br/>
+        new animation (with a generation of 0) is added and the size of the vector is increased.<br/><br/>
 
         So what about the code that actually changes the values each tick?
 
@@ -331,26 +315,26 @@
         }
     </code></pre>
 
-        Templates! Yeah I know  ... it's not perfect but it'll do! This function takes a vector of game objects (of type T, which is why we need the template)
-        each of which embed a <span class="snippet">Sprite</span> struct. It also takes the corresponding <span class="snippet">SpriteClass</span> struct for that type which contains all the actual data we want to change. We also take the game time.<br/><br/>
+        Templates! Yeah I know  ... it's not perfect but it'll do. This function takes a vector of game objects (of type T, which is why we need the template)
+        each of which embed a <span class="snippet">Sprite</span> Struct. It also takes the corresponding <span class="snippet">SpriteClass</span> Struct for that type which contains all the actual data we want to change. It also takes the game time.<br/><br/>
 
-        for each scale animation in the sprite class that has not completed, we get the referenced game object, from which we get the location of it's vertex data in the <span class="snippet">SpriteClass</span>'s buffer.
-        Then we call <span class="snippet">getCurrentAnimationValue</span> with the current game time, and voila.<br/><br/>
+        for each scale animation in the sprite class that has not completed, we get the referenced game object, from which we get the location of it's scale data in the <span class="snippet">SpriteClass</span>'s scale data vector.
+        We set the scale value at that index to the result of a call to <span class="snippet">getCurrentAnimationValue</span> and voila.<br/><br/>
 
         If you're a little confused, this might help. This is how I call the function to update card scale animations:
 
         <pre><code class="language-c++">
-    // technically we don't need &lt;Card&gt; here as the compiler infers type T from the type of  game.cards
+    // technically we don't need &lt;Card&gt; here as the compiler infers type T from the type of game.cards
     resolveScaleAnimations&lt;Card&gt;(game.cardSpriteClass, game.cards, game.gameTime);
 </code></pre>
 
         I hope you have enjoyed reading this :) there are definitely more on the way!<br/><br/>
 
-        One more thing, I'm aware that there are libraries like Boost that handle the kind of "object pooling" that I implement myself.
-        but for this project I wanted to be a little lean and just do things myself :) Also for the sake of the blog post, I think its nice
+        One more thing, I'm aware that there are libraries like Boost that handle the kind of "object pooling" that I implement myself here.
+        But for this project I wanted to be a little lean and just do things myself :) Also for the sake of this blog post, I think its nice
         to arrive at an abstraction organically, rather than dive straight in with a managed solution.<br/><br/>
 
-        If you would like to talk to me about game development or C++ please email me at 
+        If you would like to talk to me about game development or C++ (or maybe you just want to correct something that i've got wrong here) please email me at 
         <a style="text-decoration: none; font-weight: bold; color: black;" href="mailto:joesgamesbitnbyes@gmail.com">joesgamesbitnbyes@gmail.com</a>
         </p>
     </div>
